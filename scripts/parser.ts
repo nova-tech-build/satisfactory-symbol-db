@@ -159,6 +159,19 @@ class FileManager {
     }).join('\n\n')
   }
 
+  static formatAllByBlock(records: CodePointRecord[], codePointManager: CodePointManager): string {
+    const blockMap = codePointManager.groupCodePointsByBlock(records)
+    const sortedBlocks = Array.from(blockMap.entries()).sort(
+      (a, b) => a[0].localeCompare(b[0])
+    )
+
+    return sortedBlocks.map(([block, chars]) => {
+      const charString = chars.map(r => r.char).join('')
+      const wrapped = charString.match(/.{1,120}/g)?.join('\n') || ''
+      return `${block} (${chars.length} characters):\n${wrapped}`
+    }).join('\n\n')
+  }
+
   writeCodePointsFiles(
     outDir: string,
     combinedRecords: CodePointRecord[],
@@ -177,6 +190,10 @@ class FileManager {
     FileManager.writeFile(
       path.join(outDir, 'all-codepoints.txt'),
       FileManager.formatCodePoints(combinedRecords)
+    )
+    FileManager.writeFile(
+      path.join(outDir, 'all-codepoints-by-block.txt'),
+      FileManager.formatAllByBlock(combinedRecords, codePointManager)
     )
 
     const missingOutput: CombinedOutput = {
