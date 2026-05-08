@@ -216,7 +216,7 @@ class FileManager {
   }
 }
 
-class Parser {
+class RdParse {
   private fontProcessor: FontProcessor
   private codePointManager: CodePointManager
   private fileManager: FileManager
@@ -273,5 +273,5 @@ class Parser {
 }
 
 // Main execution
-const parser = new Parser()
+const parser = new RdParse()
 parser.run()

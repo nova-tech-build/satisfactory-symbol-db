@@ -1,5 +1,5 @@
 declare module 'unicode-blocks' {
-  interface UnicodeBlock {
+  export interface UnicodeBlock {
     start: number;
     end: number;
     name: string;
