@@ -1,28 +1,37 @@
 import './common.css'
 import './all.css'
+import {html, render} from 'lit-html'
 
-interface CodePoint {
+interface Point {
   value: number;
 }
 
-interface UnicodeBlock {
+interface Block {
   name: string;
   start: number;
   end: number;
-  points: CodePoint[];
+  points: Point[];
 }
 
-interface AllData {
+interface Data {
   generated: string;
-  blocks: UnicodeBlock[];
+  blocks: Block[];
 }
 
-async function fetchData(): Promise<AllData> {
+async function fetchData(): Promise<Data> {
   const response = await fetch('/generated/all.json')
   if (!response.ok) {
     throw new Error(`Failed to fetch all.json: ${response.statusText}`)
   }
   return response.json()
+}
+
+function toHex(value: number, padding: number = 4): string {
+  return value.toString(16).toUpperCase().padStart(padding, '0')
+}
+
+function hexFormat(value: number): string {
+  return `U+${toHex(value)}`
 }
 
 function renderCodePoint(codePoint: number): string {
@@ -33,139 +42,124 @@ function renderCodePoint(codePoint: number): string {
   }
 }
 
-function hexFormat(value: number): string {
-  return `U+${value.toString(16).toUpperCase().padStart(4, '0')}`
-}
+function createCharacterItem(point: Point) {
+  const handleClick = async () => {
+    try {
+      await navigator.clipboard.writeText(renderCodePoint(point.value))
+      const el = document.querySelector(`[data-code="${point.value}"]`)
+      if (el) {
+        el.classList.add('copied')
+        setTimeout(() => el.classList.remove('copied'), 200)
+      }
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err)
+    }
+  }
 
-function getUnicodeChartUrl(blockStart: number): string {
-  const blockCode = blockStart.toString(16).toUpperCase().padStart(4, '0')
-  return `https://www.unicode.org/charts/PDF/U${blockCode}.pdf`
-}
-
-function createCharacterGrid(block: UnicodeBlock): HTMLElement {
-  const charGrid = document.createElement('div')
-  charGrid.className = 'character-grid'
-  const fragment = document.createDocumentFragment()
-
-  block.points.forEach(point => {
-    const charDiv = document.createElement('div')
-    charDiv.className = 'character-item'
-    charDiv.title = `${hexFormat(point.value)} (${point.value})`
-    charDiv.style.cursor = 'pointer'
-
-    charDiv.innerHTML = `
+  return html`
+    <div 
+      class="character-item"
+      data-code="${point.value}"
+      title="${hexFormat(point.value)} (${point.value})"
+      @click="${handleClick}"
+      style="cursor: pointer;"
+    >
       <span class="character">${renderCodePoint(point.value)}</span>
       <span class="code">${hexFormat(point.value)}</span>
-    `
+    </div>
+  `
+}
 
-    charDiv.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(renderCodePoint(point.value))
-        charDiv.classList.add('copied')
-        setTimeout(() => charDiv.classList.remove('copied'), 200)
-      } catch (err) {
-        console.error('Failed to copy to clipboard:', err)
+function createCharacterGrid(block: Block) {
+  return html`
+    <div class="character-grid">
+      ${block.points.map(point => createCharacterItem(point))}
+    </div>
+  `
+}
+
+function createBlockElement(block: Block) {
+  let gridCreated = false
+  let isExpanded = false
+
+  const handleToggle = () => {
+    isExpanded = !isExpanded
+    const blockEl = document.querySelector(`[data-block="${block.start}"]`)
+    const contentEl = blockEl?.querySelector('.block-content') as HTMLElement | null
+    const toggleIcon = blockEl?.querySelector('.toggle-icon')
+
+    if (isExpanded) {
+      blockEl?.classList.remove('collapsed')
+      blockEl?.classList.add('expanded')
+      if (toggleIcon) {
+        toggleIcon.textContent = '▼'
       }
-    })
-
-    fragment.appendChild(charDiv)
-  })
-
-  charGrid.appendChild(fragment)
-  return charGrid
-}
-
-function createInfoElement(className: string, content: string): HTMLElement {
-  const el = document.createElement('p')
-  el.className = className
-  el.textContent = content
-  return el
-}
-
-function createPageHeader(generated: string): HTMLElement {
-  const header = document.createElement('div')
-  header.className = 'page-header'
-
-  const title = document.createElement('h1')
-  title.textContent = 'Satisfactory Symbol Database: All Characters'
-
-  const subtitle = document.createElement('p')
-  subtitle.className = 'generated-info'
-  subtitle.textContent = `Generated: ${new Date(generated).toLocaleString()}`
-
-  header.appendChild(title)
-  header.appendChild(subtitle)
-
-  return header
-}
-
-function createBlockElement(block: UnicodeBlock): HTMLElement {
-  const blockDiv = document.createElement('div')
-  blockDiv.className = 'unicode-block collapsed'
-
-  const header = document.createElement('h2')
-  header.className = 'block-header'
-  header.style.cursor = 'pointer'
-  header.innerHTML = `<span class="toggle-icon">▶</span> ${block.name} (${block.points.length} characters)`
-  blockDiv.appendChild(header)
-
-  const infoContainer = document.createElement('div')
-  infoContainer.className = 'block-info'
+      if (contentEl && !gridCreated) {
+        render(createCharacterGrid(block), contentEl)
+        gridCreated = true
+      }
+      if (contentEl) {
+        contentEl.style.display = 'block'
+      }
+    } else {
+      blockEl?.classList.remove('expanded')
+      blockEl?.classList.add('collapsed')
+      if (toggleIcon) {
+        toggleIcon.textContent = '▶'
+      }
+      if (contentEl) {
+        contentEl.style.display = 'none'
+      }
+    }
+  }
 
   const populationPercent = ((block.points.length / (block.end - block.start + 1)) * 100).toFixed(1)
-  const statsText = `Range: ${block.start}-${block.end} (${hexFormat(block.start)} to ${hexFormat(block.end)}) | Populated: ${populationPercent}% | `
+  const chartUrl = `https://www.unicode.org/charts/PDF/U${toHex(block.start)}.pdf`
 
-  const stats = createInfoElement('block-stats', statsText)
+  return html`
+    <div class="unicode-block collapsed" data-block="${block.start}">
+      <h2 class="block-header" @click="${handleToggle}" style="cursor: pointer;">
+        <span class="toggle-icon">▶</span> ${block.name} (${block.points.length} characters)
+      </h2>
+      <div class="block-info">
+        <p class="block-stats">
+          Range: ${block.start}-${block.end} (${hexFormat(block.start)} to ${hexFormat(block.end)}) | 
+          Populated: ${populationPercent}% | 
+          <a 
+            href="${chartUrl}" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="unicode-chart-link"
+          >
+            ${chartUrl}
+          </a>
+        </p>
+      </div>
+      <div class="block-content" style="display: none;"></div>
+    </div>
+  `
+}
 
-  const chartLink = document.createElement('a')
-  chartLink.href = getUnicodeChartUrl(block.start)
-  chartLink.target = '_blank'
-  chartLink.rel = 'noopener noreferrer'
-  chartLink.className = 'unicode-chart-link'
-  chartLink.textContent = getUnicodeChartUrl(block.start)
-
-  stats.appendChild(chartLink)
-  infoContainer.appendChild(stats)
-  blockDiv.appendChild(infoContainer)
-
-  const contentWrapper = document.createElement('div')
-  contentWrapper.className = 'block-content'
-  contentWrapper.style.display = 'none'
-  blockDiv.appendChild(contentWrapper)
-
-  let gridCreated = false
-
-  header.addEventListener('click', () => {
-    const isCollapsed = blockDiv.classList.contains('collapsed')
-    const toggleIcon = header.querySelector('.toggle-icon')!
-
-    blockDiv.classList.toggle('collapsed')
-    blockDiv.classList.toggle('expanded')
-    toggleIcon.textContent = isCollapsed ? '▼' : '▶'
-    contentWrapper.style.display = isCollapsed ? 'block' : 'none'
-
-    if (isCollapsed && !gridCreated) {
-      contentWrapper.appendChild(createCharacterGrid(block))
-      gridCreated = true
-    }
-  })
-
-  return blockDiv
+function createPageHeader(generated: string) {
+  const generatedDate = new Date(generated).toLocaleString()
+  return html`
+    <div class="page-header">
+      <h1>Satisfactory Symbol Database: All Characters</h1>
+      <p class="generated-info">Generated: ${generatedDate}</p>
+    </div>
+  `
 }
 
 async function init(): Promise<void> {
   const appContainer = document.getElementById('app')!
-
   const data = await fetchData()
 
-  appContainer.appendChild(createPageHeader(data.generated))
+  const template = html`
+    ${createPageHeader(data.generated)}
+    ${data.blocks.map(block => createBlockElement(block))}
+  `
 
-  const fragment = document.createDocumentFragment()
-  data.blocks.forEach(block => {
-    fragment.appendChild(createBlockElement(block))
-  })
-
-  appContainer.appendChild(fragment)
+  render(template, appContainer)
 }
 
 

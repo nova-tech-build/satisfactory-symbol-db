@@ -16,5 +16,8 @@
         "typescript": "^6.0.2",
         "unicode-blocks": "^2.0.4",
         "vite": "^8.0.10"
+    },
+    "dependencies": {
+        "lit-html": "^3.3.2"
     }
 }
