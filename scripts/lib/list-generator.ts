@@ -48,7 +48,7 @@ export class ListGenerator {
 
   }
 
-  run(): Blocks {
+  run(): void {
     const points =
       this.getFontFiles()
       .map(file => Points.fromTtFile(file))
@@ -82,8 +82,6 @@ export class ListGenerator {
     })
 
     fs.writeFileSync(this.outputPath, JSON.stringify(output))
-
-    return blocks
   }
 
   private getFontFiles(): string[] {

@@ -161,7 +161,7 @@ export async function createList(name: string, label: string, description: strin
 const n = new URLSearchParams(location.search).get('name')
 
 const lists: Record<string, [string, string, string]> = {
-  nova: ['nova', 'Nova\'s Picks', 'What Nova likes to use. Based on feels.'],
+  nova: ['nova', 'Nova\'s Picks', 'Based on feels. Mostly for testing purposes.'],
 }
 
 const [name, label, description] = lists[n ?? ''] ?? ['all', 'All Characters', 'All characters in the database.']

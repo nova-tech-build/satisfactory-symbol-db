@@ -65,11 +65,11 @@
     transform: rotate(-90deg);
 }
 
-.subset.large-subset.collapsed .subset-header {
+.subset.large-subset .subset-header {
     border-left: 4px solid #cc0000;
 }
 
-.subset.large-subset.collapsed {
+.subset.large-subset {
     border: 1px solid #ff9999;
 }
 
