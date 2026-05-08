@@ -141,7 +141,7 @@ function createBlockElement(block: Block) {
 }
 
 function createPageHeader(generated: string) {
-  const generatedDate = new Date(generated).toLocaleString()
+  const generatedDate = new Date(generated).toISOString()
   return html`
     <div class="page-header">
       <h1>Satisfactory Symbol Database: All Characters</h1>
