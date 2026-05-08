@@ -117,6 +117,7 @@
 
 .character {
     font-size: 24px;
+    height: 40px;
     color: var(--color-text-primary);
 }
 

@@ -30,6 +30,10 @@ function hexFormat(value: number): string {
   return `U+${toHex(value)}`
 }
 
+function altCodeFormat(codePoint: number): string {
+  return `A+${codePoint.toString().padStart(4, '0')}`
+}
+
 function renderCodePoint(codePoint: number): string {
   try {
     return String.fromCodePoint(codePoint)
@@ -62,6 +66,7 @@ function createCharacterItem(codePoint: number) {
     >
       <span class="character">${renderCodePoint(codePoint)}</span>
       <span class="code">${hexFormat(codePoint)}</span>
+      <span class="code">${altCodeFormat(codePoint)}</span>
     </div>
   `
 }
@@ -142,8 +147,9 @@ function createPageHeader(generated: string) {
   return html`
     <div class="page-header">
       <h1>Satisfactory Symbol Database: All Characters</h1>
-      <p>Large blocks are in outlined in pink.</p>
       <p>Click to copy.</p>
+      <p>Large blocks are in outlined in pink.</p>
+      <p>Block names are defined by unicode standard.</p>
       <p class="generated-info">Generated: ${generatedDate}</p>
     </div>
   `
