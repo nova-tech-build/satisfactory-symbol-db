@@ -14,8 +14,8 @@ interface Data {
   blocks: Block[];
 }
 
-async function fetchData(): Promise<Data> {
-  const response = await fetch('/generated/all.json')
+async function fetchData(path: string): Promise<Data> {
+  const response = await fetch(path)
   if (!response.ok) {
     throw new Error(`Failed to fetch all.json: ${response.statusText}`)
   }
@@ -110,19 +110,16 @@ function createBlockElement(block: Block) {
   const defaultIcon = isExpanded ? '▼' : '▶'
   const defaultDisplay = isExpanded ? 'block' : 'none'
 
-
-  // Create grid immediately if auto-expanded
   if (isExpanded) {
     gridCreated = true
   }
 
   return html`
-    <div class="unicode-block ${defaultState} ${isLargeBlock ? 'large-block' : ''}" data-block="${block.start}">
+    <div class="block ${defaultState} ${isLargeBlock ? 'large-block' : ''}" data-block="${block.start}">
       <h2 class="block-header" @click="${handleToggle}" style="cursor: pointer;">
         <span class="toggle-icon">${defaultIcon}</span> ${block.name} (${block.points.length} characters)
       </h2>
       <div class="block-info">
-        <p class="block-stats">
           Range: ${block.start}-${block.end} (${hexFormat(block.start)} to ${hexFormat(block.end)}) | 
           Populated: ${populationPercent}% | 
           <a 
@@ -132,8 +129,7 @@ function createBlockElement(block: Block) {
             class="unicode-chart-link"
           >
             ${chartUrl}
-          </a>
-        </p>
+          </a>   
       </div>
       <div class="block-content" style="display: ${defaultDisplay};">
         ${isExpanded ? createCharacterGrid(block) : ''}
@@ -157,7 +153,7 @@ function createPageHeader(generated: string) {
 
 async function init(): Promise<void> {
   const appContainer = document.getElementById('app')!
-  const data = await fetchData()
+  const data = await fetchData('/generated/all.json')
 
   const template = html`
     ${createPageHeader(data.generated)}
