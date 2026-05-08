@@ -132,24 +132,25 @@ function createSubsetElement(subset: Subset) {
   `
 }
 
-function createPageHeader(generated: string, listName: string) {
-  const generatedDate = new Date(generated).toISOString()
+function createPageHeader(generated: string, label: string, description: string) {
   return html`
     <div class="page-header">
-      <h1>Satisfactory Symbol DB: ${listName}</h1>
+      <h1>Satisfactory Symbol DB: ${label}</h1>
+      <p><em>${description}</em></p>
+      <p><a href="/">Back to all lists</a></p>
       <p>Click to copy.</p>
       <p>Large blocks are in outlined in pink.</p>
-      <p class="generated-info">Generated: ${generatedDate}</p>
+      <p class="generated-info">Generated: ${new Date(generated).toISOString()}</p>
     </div>
   `
 }
 
-export async function createList(name: string, label: string): Promise<void> {
+export async function createList(name: string, label: string, description: string): Promise<void> {
   const appContainer = document.getElementById('app')!
   const data = await fetchData(`/generated/${name}.json`)
 
   const template = html`
-    ${createPageHeader(data.generatedAt, label)}
+    ${createPageHeader(data.generatedAt, label, description)}
     ${data.subsets.map(subset => createSubsetElement(subset))}
   `
 
@@ -157,16 +158,16 @@ export async function createList(name: string, label: string): Promise<void> {
 }
 
 
-const name = new URLSearchParams(location.search).get('name')
+const n = new URLSearchParams(location.search).get('name')
 
-const lists: Record<string, [string, string]> = {
-  nova: ['nova', 'Nova\'s Picks'],
+const lists: Record<string, [string, string, string]> = {
+  nova: ['nova', 'Nova\'s Picks', 'What Nova likes to use. Based on feels.'],
 }
 
-const [path, listName] = lists[name ?? ''] ?? ['all', 'All Characters']
+const [name, label, description] = lists[n ?? ''] ?? ['all', 'All Characters', 'All characters in the database.']
 
 document.addEventListener('DOMContentLoaded', () => {
-  createList(path, listName)
+  createList(name, label, description)
     .catch(console.error)
 })
 
