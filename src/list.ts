@@ -1,16 +1,9 @@
 import './common.css'
 import './list.css'
 import {html, render} from 'lit-html'
-import type {GeneratedList} from '../scripts/lib/list-generator.ts'
+import type {CharacterList, Subset} from '../scripts/lib/list-generator.ts'
 
-interface Block {
-  name: string;
-  start: number;
-  end: number;
-  points: number[];
-}
-
-async function fetchData(path: string): Promise<GeneratedList> {
+async function fetchData(path: string): Promise<CharacterList> {
   const response = await fetch(path)
   if (!response.ok) {
     throw new Error(`Failed to fetch all.json: ${response.statusText}`)
@@ -67,41 +60,40 @@ function createCharacterItem(codePoint: number) {
   `
 }
 
-function createCharacterGrid(block: Block) {
+function createCharacterGrid(subset: Subset) {
   return html`
     <div class="character-grid">
-      ${block.points.map(codePoint => createCharacterItem(codePoint))}
+      ${subset.points.map(codePoint => createCharacterItem(codePoint))}
     </div>
   `
 }
 
-function createBlockElement(block: Block) {
-  const isLargeBlock = block.points.length >= 275
+function createSubsetElement(subset: Subset) {
+  const hasBlockInfo = subset.block !== undefined
+  const isLargeSubset = subset.points.length >= 275
 
   let gridCreated = false
-  let isExpanded = !isLargeBlock
+  let isExpanded = !isLargeSubset
 
   const handleToggle = () => {
     isExpanded = !isExpanded
 
-    const blockEl = document.querySelector(`[data-block="${block.start}"]`) as HTMLElement
-    const contentEl = blockEl.querySelector('.block-content') as HTMLElement
-    const toggleIcon = blockEl.querySelector('.toggle-icon') as HTMLElement
+    const subsetEl = document.querySelector(`[data-subset="${subset.name}"]`) as HTMLElement
+    const contentEl = subsetEl.querySelector('.subset-content') as HTMLElement
+    const toggleIcon = subsetEl.querySelector('.toggle-icon') as HTMLElement
 
-    blockEl.classList.toggle('expanded', isExpanded)
-    blockEl.classList.toggle('collapsed', !isExpanded)
+    subsetEl.classList.toggle('expanded', isExpanded)
+    subsetEl.classList.toggle('collapsed', !isExpanded)
 
     toggleIcon.textContent = isExpanded ? '▼' : '▶'
     contentEl.style.display = isExpanded ? 'block' : 'none'
 
     if (isExpanded && !gridCreated) {
-      render(createCharacterGrid(block), contentEl)
+      render(createCharacterGrid(subset), contentEl)
       gridCreated = true
     }
   }
 
-  const populationPercent = ((block.points.length / (block.end - block.start + 1)) * 100).toFixed(1)
-  const chartUrl = `https://www.unicode.org/charts/PDF/U${toHex(block.start)}.pdf`
   const defaultState = isExpanded ? 'expanded' : 'collapsed'
   const defaultIcon = isExpanded ? '▼' : '▶'
   const defaultDisplay = isExpanded ? 'block' : 'none'
@@ -111,24 +103,28 @@ function createBlockElement(block: Block) {
   }
 
   return html`
-    <div class="block ${defaultState} ${isLargeBlock ? 'large-block' : ''}" data-block="${block.start}">
-      <h2 class="block-header" @click="${handleToggle}" style="cursor: pointer;">
-        <span class="toggle-icon">${defaultIcon}</span> ${block.name} (${block.points.length} characters)
+    <div class="subset ${defaultState} ${isLargeSubset ? 'large-subset' : ''}" data-subset="${subset.name}">
+      <h2 class="subset-header" @click="${handleToggle}" style="cursor: pointer;">
+        <span class="toggle-icon">${defaultIcon}</span> ${subset.name} (${subset.points.length} characters)
       </h2>
-      <div class="block-info">
-          Range: ${block.start}-${block.end} (${hexFormat(block.start)} to ${hexFormat(block.end)}) | 
-          Populated: ${populationPercent}% | 
-          <a 
-            href="${chartUrl}" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            class="unicode-chart-link"
-          >
-            ${chartUrl}
-          </a>   
-      </div>
-      <div class="block-content" style="display: ${defaultDisplay};">
-        ${isExpanded ? createCharacterGrid(block) : ''}
+      ${hasBlockInfo ? html`
+        <div class="block-info">
+          ${subset.block ? html`
+            Range: ${subset.block.start}-${subset.block.end} (${hexFormat(subset.block.start)} to ${hexFormat(subset.block.end)}) | 
+            Populated: ${(((subset.points.length / (subset.block.end - subset.block.start + 1)) * 100).toFixed(1))}% | 
+            <a 
+              href="https://www.unicode.org/charts/PDF/U${toHex(subset.block.start)}.pdf" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="unicode-chart-link"
+            >
+              https://www.unicode.org/charts/PDF/U${toHex(subset.block.start)}.pdf
+            </a>
+          ` : ''}
+        </div>
+      ` : ''}
+      <div class="subset-content" style="display: ${defaultDisplay};">
+        ${isExpanded ? createCharacterGrid(subset) : ''}
       </div>
     </div>
   `
@@ -152,8 +148,8 @@ export async function createList(path: string, listName: string): Promise<void> 
   const data = await fetchData(path)
 
   const template = html`
-    ${createPageHeader(data.generated, listName)}
-    ${data.blocks.map(block => createBlockElement(block))}
+    ${createPageHeader(data.generatedAt, listName)}
+    ${data.subsets.map(subset => createSubsetElement(subset))}
   `
 
   render(template, appContainer)

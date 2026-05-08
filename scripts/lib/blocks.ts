@@ -53,6 +53,10 @@ export class Blocks {
     return this.blocks.map(callback)
   }
 
+  public filter(callback: (b: Block) => boolean): Blocks {
+    return new Blocks(this.blocks.filter(callback))
+  }
+
   public static fromPoints(points: Points): Blocks {
     const blocks = new Map<number, Block>()
 
