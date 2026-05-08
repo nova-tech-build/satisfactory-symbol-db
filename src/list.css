@@ -87,7 +87,6 @@
     background-color: var(--color-bg-tertiary);
 }
 
-/* Character Grid */
 .character-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
