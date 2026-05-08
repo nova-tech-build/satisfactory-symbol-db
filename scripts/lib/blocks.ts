@@ -28,6 +28,10 @@ export class Block {
     this.points.forEach(callback)
   }
 
+  public map<T>(callback: (p: Point) => T): T[] {
+    return this.points.map(callback)
+  }
+
   public add(point: Point): void {
 
     if (point.value < this.block.start || point.value > this.block.end) {
@@ -43,6 +47,10 @@ export class Blocks {
 
   constructor(blocks: Block[]) {
     this.blocks = blocks.sort((a, b) => a.start - b.start)
+  }
+
+  public map<T>(callback: (b: Block) => T): T[] {
+    return this.blocks.map(callback)
   }
 
   public static fromPoints(points: Points): Blocks {

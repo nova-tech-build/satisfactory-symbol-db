@@ -1,6 +1,7 @@
 import './common.css'
 import './list.css'
 import {html, render} from 'lit-html'
+import type {GeneratedList} from '../scripts/lib/list-generator.ts'
 
 interface Block {
   name: string;
@@ -9,12 +10,7 @@ interface Block {
   points: number[];
 }
 
-interface Data {
-  generated: string;
-  blocks: Block[];
-}
-
-async function fetchData(path: string): Promise<Data> {
+async function fetchData(path: string): Promise<GeneratedList> {
   const response = await fetch(path)
   if (!response.ok) {
     throw new Error(`Failed to fetch all.json: ${response.statusText}`)
@@ -138,11 +134,11 @@ function createBlockElement(block: Block) {
   `
 }
 
-function createPageHeader(generated: string) {
+function createPageHeader(generated: string, listName: string) {
   const generatedDate = new Date(generated).toISOString()
   return html`
     <div class="page-header">
-      <h1>Satisfactory Symbol Database: All Characters</h1>
+      <h1>Satisfactory Symbol DB: ${listName}</h1>
       <p>Click to copy.</p>
       <p>Large blocks are in outlined in pink.</p>
       <p>Block names are defined by unicode standard.</p>
@@ -151,12 +147,12 @@ function createPageHeader(generated: string) {
   `
 }
 
-export async function createList(path: string): Promise<void> {
+export async function createList(path: string, listName: string): Promise<void> {
   const appContainer = document.getElementById('app')!
   const data = await fetchData(path)
 
   const template = html`
-    ${createPageHeader(data.generated)}
+    ${createPageHeader(data.generated, listName)}
     ${data.blocks.map(block => createBlockElement(block))}
   `
 
