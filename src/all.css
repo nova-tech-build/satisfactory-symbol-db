@@ -127,7 +127,14 @@
     letter-spacing: 0.5px;
 }
 
-/* Error Handling */
+.unicode-block.large-block.collapsed .block-header {
+    border-left: 4px solid #cc0000;
+}
+
+.unicode-block.large-block.collapsed {
+    border: 1px solid #ff9999;
+}
+
 .error {
     padding: 16px;
     background-color: var(--color-bg-tertiary);

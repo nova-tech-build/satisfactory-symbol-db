@@ -75,8 +75,10 @@ function createCharacterGrid(block: Block) {
 }
 
 function createBlockElement(block: Block) {
+  const isLargeBlock = block.points.length >= 275
+
   let gridCreated = false
-  let isExpanded = false
+  let isExpanded = !isLargeBlock
 
   const handleToggle = () => {
     isExpanded = !isExpanded
@@ -99,11 +101,20 @@ function createBlockElement(block: Block) {
 
   const populationPercent = ((block.points.length / (block.end - block.start + 1)) * 100).toFixed(1)
   const chartUrl = `https://www.unicode.org/charts/PDF/U${toHex(block.start)}.pdf`
+  const defaultState = isExpanded ? 'expanded' : 'collapsed'
+  const defaultIcon = isExpanded ? '▼' : '▶'
+  const defaultDisplay = isExpanded ? 'block' : 'none'
+
+
+  // Create grid immediately if auto-expanded
+  if (isExpanded) {
+    gridCreated = true
+  }
 
   return html`
-    <div class="unicode-block collapsed" data-block="${block.start}">
+    <div class="unicode-block ${defaultState} ${isLargeBlock ? 'large-block' : ''}" data-block="${block.start}">
       <h2 class="block-header" @click="${handleToggle}" style="cursor: pointer;">
-        <span class="toggle-icon">▶</span> ${block.name} (${block.points.length} characters)
+        <span class="toggle-icon">${defaultIcon}</span> ${block.name} (${block.points.length} characters)
       </h2>
       <div class="block-info">
         <p class="block-stats">
@@ -119,7 +130,9 @@ function createBlockElement(block: Block) {
           </a>
         </p>
       </div>
-      <div class="block-content" style="display: none;"></div>
+      <div class="block-content" style="display: ${defaultDisplay};">
+        ${isExpanded ? createCharacterGrid(block) : ''}
+      </div>
     </div>
   `
 }
@@ -129,6 +142,8 @@ function createPageHeader(generated: string) {
   return html`
     <div class="page-header">
       <h1>Satisfactory Symbol Database: All Characters</h1>
+      <p>Large blocks are in outlined in pink.</p>
+      <p>Click to copy.</p>
       <p class="generated-info">Generated: ${generatedDate}</p>
     </div>
   `
