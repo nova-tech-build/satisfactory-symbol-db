@@ -164,9 +164,7 @@ function main(inputDir: string, outputPath: string) {
   blocks.forEach((block: Block) => {
     const points: any[] = []
     block.forEach((point: Point) => {
-      points.push({
-        value: point.value,
-      })
+      points.push(point.value)
     })
 
     output.blocks.push({

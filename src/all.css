@@ -1,4 +1,5 @@
 #app {
+    font-family: 'Noto Sans CJK JP', 'Noto Kufi Arabic', 'Open Sans', sans-serif;
     max-width: none;
     padding: 20px;
     background: transparent;
@@ -134,14 +135,4 @@
     border-radius: 8px;
     color: #ff6b6b;
     text-align: center;
-}
-
-
-.unicode-chart-link {
-    color: var(--color-highlight);
-    text-decoration: none;
-}
-
-.unicode-chart-link:hover {
-    text-decoration: underline;
 }

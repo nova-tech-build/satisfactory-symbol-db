@@ -2,15 +2,11 @@ import './common.css'
 import './all.css'
 import {html, render} from 'lit-html'
 
-interface Point {
-  value: number;
-}
-
 interface Block {
   name: string;
   start: number;
   end: number;
-  points: Point[];
+  points: number[];
 }
 
 interface Data {
@@ -42,11 +38,11 @@ function renderCodePoint(codePoint: number): string {
   }
 }
 
-function createCharacterItem(point: Point) {
+function createCharacterItem(codePoint: number) {
   const handleClick = async () => {
     try {
-      await navigator.clipboard.writeText(renderCodePoint(point.value))
-      const el = document.querySelector(`[data-code="${point.value}"]`)
+      await navigator.clipboard.writeText(renderCodePoint(codePoint))
+      const el = document.querySelector(`[data-code="${codePoint}"]`)
       if (el) {
         el.classList.add('copied')
         setTimeout(() => el.classList.remove('copied'), 200)
@@ -59,13 +55,13 @@ function createCharacterItem(point: Point) {
   return html`
     <div 
       class="character-item"
-      data-code="${point.value}"
-      title="${hexFormat(point.value)} (${point.value})"
+      data-code="${codePoint}"
+      title="${hexFormat(codePoint)} (${codePoint})"
       @click="${handleClick}"
       style="cursor: pointer;"
     >
-      <span class="character">${renderCodePoint(point.value)}</span>
-      <span class="code">${hexFormat(point.value)}</span>
+      <span class="character">${renderCodePoint(codePoint)}</span>
+      <span class="code">${hexFormat(codePoint)}</span>
     </div>
   `
 }
@@ -73,7 +69,7 @@ function createCharacterItem(point: Point) {
 function createCharacterGrid(block: Block) {
   return html`
     <div class="character-grid">
-      ${block.points.map(point => createCharacterItem(point))}
+      ${block.points.map(codePoint => createCharacterItem(codePoint))}
     </div>
   `
 }
@@ -84,32 +80,20 @@ function createBlockElement(block: Block) {
 
   const handleToggle = () => {
     isExpanded = !isExpanded
-    const blockEl = document.querySelector(`[data-block="${block.start}"]`)
-    const contentEl = blockEl?.querySelector('.block-content') as HTMLElement | null
-    const toggleIcon = blockEl?.querySelector('.toggle-icon')
 
-    if (isExpanded) {
-      blockEl?.classList.remove('collapsed')
-      blockEl?.classList.add('expanded')
-      if (toggleIcon) {
-        toggleIcon.textContent = '▼'
-      }
-      if (contentEl && !gridCreated) {
-        render(createCharacterGrid(block), contentEl)
-        gridCreated = true
-      }
-      if (contentEl) {
-        contentEl.style.display = 'block'
-      }
-    } else {
-      blockEl?.classList.remove('expanded')
-      blockEl?.classList.add('collapsed')
-      if (toggleIcon) {
-        toggleIcon.textContent = '▶'
-      }
-      if (contentEl) {
-        contentEl.style.display = 'none'
-      }
+    const blockEl = document.querySelector(`[data-block="${block.start}"]`) as HTMLElement
+    const contentEl = blockEl.querySelector('.block-content') as HTMLElement
+    const toggleIcon = blockEl.querySelector('.toggle-icon') as HTMLElement
+
+    blockEl.classList.toggle('expanded', isExpanded)
+    blockEl.classList.toggle('collapsed', !isExpanded)
+
+    toggleIcon.textContent = isExpanded ? '▼' : '▶'
+    contentEl.style.display = isExpanded ? 'block' : 'none'
+
+    if (isExpanded && !gridCreated) {
+      render(createCharacterGrid(block), contentEl)
+      gridCreated = true
     }
   }
 
