@@ -139,7 +139,6 @@ function createPageHeader(generated: string, listName: string) {
       <h1>Satisfactory Symbol DB: ${listName}</h1>
       <p>Click to copy.</p>
       <p>Large blocks are in outlined in pink.</p>
-      <p>Block names are defined by unicode standard.</p>
       <p class="generated-info">Generated: ${generatedDate}</p>
     </div>
   `
@@ -161,7 +160,7 @@ export async function createList(name: string, label: string): Promise<void> {
 const name = new URLSearchParams(location.search).get('name')
 
 const lists: Record<string, [string, string]> = {
-  nova: ['nova', "Nova's Picks"],
+  nova: ['nova', 'Nova\'s Picks'],
 }
 
 const [path, listName] = lists[name ?? ''] ?? ['all', 'All Characters']
