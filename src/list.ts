@@ -154,3 +154,18 @@ export async function createList(path: string, listName: string): Promise<void> 
 
   render(template, appContainer)
 }
+
+
+const name = new URLSearchParams(location.search).get('name')
+
+const lists: Record<string, [string, string]> = {
+  nova: ['/generated/nova.json', "Nova's Selection"],
+}
+
+const [path, listName] = lists[name ?? ''] ?? ['/generated/all.json', 'All']
+
+document.addEventListener('DOMContentLoaded', () => {
+  createList(path, listName)
+    .catch(console.error)
+})
+
