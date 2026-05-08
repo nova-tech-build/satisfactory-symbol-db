@@ -43,10 +43,7 @@ export class Block {
 }
 
 export class Blocks {
-  private readonly blocks: Block[]
-
-  constructor(blocks: Block[]) {
-    this.blocks = blocks.sort((a, b) => a.start - b.start)
+  constructor(private readonly blocks: Block[]) {
   }
 
   public map<T>(callback: (b: Block) => T): T[] {
@@ -55,6 +52,10 @@ export class Blocks {
 
   public filter(callback: (b: Block) => boolean): Blocks {
     return new Blocks(this.blocks.filter(callback))
+  }
+
+  public sort(callback: (a: Block, b: Block) => number): Blocks {
+    return new Blocks([...this.blocks].sort(callback))
   }
 
   public static fromPoints(points: Points): Blocks {

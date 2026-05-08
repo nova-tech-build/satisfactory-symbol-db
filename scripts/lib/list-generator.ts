@@ -20,6 +20,7 @@ export type CharacterList = {
 
 export class ListGenerator {
   private blockFilter: (block: Block) => boolean = () => true;
+  private blockSort: (a: Block, b: Block) => number = (a, b) => a.start - b.start;
 
   constructor(
     private readonly inputDir: string,
@@ -28,9 +29,23 @@ export class ListGenerator {
   }
 
   withBlockFilter(filter: (block: Block) => boolean): ListGenerator {
-    const me = new ListGenerator(this.inputDir, this.outputPath)
+    const me = this.clone()
     me.blockFilter = filter
     return me
+  }
+
+  withBlockSort(sort: (a: Block, b: Block) => number) {
+    const me = this.clone()
+    me.blockSort = sort
+    return me
+  }
+
+  private clone(): ListGenerator {
+    const me =  new ListGenerator(this.inputDir, this.outputPath)
+    me.blockFilter = this.blockFilter
+    me.blockSort = this.blockSort
+    return me
+
   }
 
   run(): Blocks {
@@ -41,7 +56,9 @@ export class ListGenerator {
         (all, points) => all.merge(points),
         new Points([]),
       )
-    const blocks = Blocks.fromPoints(points.unique()).filter(this.blockFilter)
+    const blocks = Blocks.fromPoints(points.unique())
+      .filter(this.blockFilter)
+      .sort(this.blockSort)
 
     const output: CharacterList = {
       generatedAt: new Date().toISOString(),

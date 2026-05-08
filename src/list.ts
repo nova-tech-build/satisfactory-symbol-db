@@ -70,6 +70,7 @@ function createCharacterGrid(subset: Subset) {
 
 function createSubsetElement(subset: Subset) {
   const hasBlockInfo = subset.block !== undefined
+  const block = subset.block
   const isLargeSubset = subset.points.length >= 275
 
   let gridCreated = false
@@ -109,16 +110,17 @@ function createSubsetElement(subset: Subset) {
       </h2>
       ${hasBlockInfo ? html`
         <div class="block-info">
-          ${subset.block ? html`
-            Range: ${subset.block.start}-${subset.block.end} (${hexFormat(subset.block.start)} to ${hexFormat(subset.block.end)}) | 
-            Populated: ${(((subset.points.length / (subset.block.end - subset.block.start + 1)) * 100).toFixed(1))}% | 
+          ${block ? html`
+            Range: ${block.start}-${block.end} (${hexFormat(block.start)} to ${hexFormat(block.end)}) | 
+            Populated: ${(((subset.points.length / (block.end - block.start + 1)) * 100).toFixed(1))}% | 
+            <em>${block.name}</em>:
             <a 
-              href="https://www.unicode.org/charts/PDF/U${toHex(subset.block.start)}.pdf" 
+              href="https://www.unicode.org/charts/PDF/U${toHex(block.start)}.pdf" 
               target="_blank" 
               rel="noopener noreferrer" 
               class="unicode-chart-link"
             >
-              https://www.unicode.org/charts/PDF/U${toHex(subset.block.start)}.pdf
+              https://www.unicode.org/charts/PDF/U${toHex(block.start)}.pdf
             </a>
           ` : ''}
         </div>
@@ -143,12 +145,12 @@ function createPageHeader(generated: string, listName: string) {
   `
 }
 
-export async function createList(path: string, listName: string): Promise<void> {
+export async function createList(name: string, label: string): Promise<void> {
   const appContainer = document.getElementById('app')!
-  const data = await fetchData(path)
+  const data = await fetchData(`/generated/${name}.json`)
 
   const template = html`
-    ${createPageHeader(data.generatedAt, listName)}
+    ${createPageHeader(data.generatedAt, label)}
     ${data.subsets.map(subset => createSubsetElement(subset))}
   `
 
@@ -159,10 +161,10 @@ export async function createList(path: string, listName: string): Promise<void> 
 const name = new URLSearchParams(location.search).get('name')
 
 const lists: Record<string, [string, string]> = {
-  nova: ['/generated/nova.json', "Nova's Selection"],
+  nova: ['nova', "Nova's Picks"],
 }
 
-const [path, listName] = lists[name ?? ''] ?? ['/generated/all.json', 'All']
+const [path, listName] = lists[name ?? ''] ?? ['all', 'All Characters']
 
 document.addEventListener('DOMContentLoaded', () => {
   createList(path, listName)
