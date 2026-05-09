@@ -61,6 +61,13 @@ export class Sign extends Buildable {
     return new Sign(entity)
   }
 
+  withAlt(text: string): Sign {
+    const entity = this.cloneEntity()
+    // @ts-ignore
+    entity.properties.mPrefabTextElementSaveData.values[0].properties.Text.value = text
+    return new Sign(entity)
+  }
+
   withMinimization(): Sign {
     const entity = this.cloneEntity()
 

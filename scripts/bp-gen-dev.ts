@@ -1,4 +1,4 @@
-import {BpGenerator} from '../src/lib/bp-generator.js'
+import {BpGenerator, BpZip} from '../src/lib/bp-generator.js'
 import {Blueprint, Parser} from '@etothepii/satisfactory-file-parser'
 import fs from 'fs'
 import {ListGenerator} from './lib/list-generator.js'
@@ -14,6 +14,8 @@ function writeBlueprintFiles(path: string, blueprint: Blueprint): void {
     }, chunk => {
       fileBodyChunks.push(chunk)
     })
+
+  console.log(summary);
 
   let p = `${path}.sbp`
   fs.writeFileSync(p, new Uint8Array(Buffer.concat([fileHeader, ...fileBodyChunks])))
@@ -39,15 +41,21 @@ const points = blocks
   .map(block => block.pointsAsNumbers)
   .flatMap(x => x)
 
-  //.sort(() => Math.random() - 0.5)
-  //.slice(0, 10000)
-
 console.log(points);
 
 const gen = new BpGenerator(tpl)
 
-let i = 0
 
+
+const zip = new BpZip()
+let i = 0
 for (const bp of gen.blueprints(points)) {
-  writeBlueprintFiles(`tmp/bp-gen-dev-${i++}`, bp)
+  i++
+  zip.add(`bp-gen-dev-${String(i).padStart(2, '0')}`, bp)
+
 }
+
+const buffer = await zip.jsZip.generateAsync({
+  type: 'nodebuffer'
+})
+fs.writeFileSync('tmp/bp.zip', buffer)
