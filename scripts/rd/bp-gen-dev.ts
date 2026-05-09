@@ -1,7 +1,7 @@
-import {BpGenerator, BpZip} from '../src/lib/bp-generator.js'
+import {BpGenerator, BpZip} from '../../src/lib/bp-generator.js'
 import {Blueprint, Parser} from '@etothepii/satisfactory-file-parser'
 import fs from 'fs'
-import {ListGenerator} from './lib/list-generator.js'
+import {ListGenerator} from '../lib/list-generator.js'
 
 
 function writeBlueprintFiles(path: string, blueprint: Blueprint): void {

@@ -2,6 +2,7 @@ import './common.css'
 import './list.css'
 import {html, render} from 'lit-html'
 import type {CharacterList, Subset} from '../scripts/lib/list-generator.ts'
+import {BpGenerator, BpZip} from './lib/bp-generator.ts'
 
 async function fetchData(path: string): Promise<CharacterList> {
   const response = await fetch(path)
@@ -69,7 +70,6 @@ function createCharacterGrid(subset: Subset) {
 }
 
 function createSubsetElement(subset: Subset) {
-  const hasBlockInfo = subset.block !== undefined
   const block = subset.block
   const isLargeSubset = subset.points.length >= 275
 
@@ -95,6 +95,41 @@ function createSubsetElement(subset: Subset) {
     }
   }
 
+  const handleDownloadBlueprints = async (event: Event) => {
+    const button = event.target as HTMLButtonElement
+    const originalText = button.textContent
+    button.disabled = true
+    button.innerHTML = '<span class="progress-icon">⏳</span>'
+
+    try {
+      const generator = await BpGenerator.create()
+      const zip = new BpZip()
+      let bpIndex = 1
+
+      for (const blueprint of generator.blueprints(subset.points)) {
+        zip.add(`${subset.name}-${String(bpIndex).padStart(2, '0')}`, blueprint)
+        bpIndex++
+      }
+
+      const buffer = await zip.generateAsyncBlob()
+
+      const url = URL.createObjectURL(buffer)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${subset.name}-blueprints.zip`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Failed to generate blueprints:', err)
+      button.textContent = 'Error'
+    } finally {
+      button.textContent = originalText
+      button.disabled = false
+    }
+  }
+
   const defaultState = isExpanded ? 'expanded' : 'collapsed'
   const defaultIcon = isExpanded ? '▼' : '▶'
   const defaultDisplay = isExpanded ? 'block' : 'none'
@@ -105,12 +140,16 @@ function createSubsetElement(subset: Subset) {
 
   return html`
     <div class="subset ${defaultState} ${isLargeSubset ? 'large-subset' : ''}" data-subset="${subset.name}">
-      <h2 class="subset-header" @click="${handleToggle}" style="cursor: pointer;">
-        <span class="toggle-icon">${defaultIcon}</span> ${subset.name} (${subset.points.length} characters)
-      </h2>
-      ${hasBlockInfo ? html`
+      <div class="subset-header-container">
+        <h2 class="subset-header" @click="${handleToggle}" style="cursor: pointer;">
+          <span class="toggle-icon">${defaultIcon}</span> ${subset.name} (${subset.points.length} characters)
+        </h2>
+        <button class="download-blueprint-btn" @click="${handleDownloadBlueprints}">
+          Download Blueprint
+        </button>
+      </div>
+      ${block ? html`
         <div class="block-info">
-          ${block ? html`
             Range: ${block.start}-${block.end} (${hexFormat(block.start)} to ${hexFormat(block.end)}) | 
             Populated: ${(((subset.points.length / (block.end - block.start + 1)) * 100).toFixed(1))}% | 
             <em>${block.name}</em>:
@@ -122,7 +161,6 @@ function createSubsetElement(subset: Subset) {
             >
               https://www.unicode.org/charts/PDF/U${toHex(block.start)}.pdf
             </a>
-          ` : ''}
         </div>
       ` : ''}
       <div class="subset-content" style="display: ${defaultDisplay};">
@@ -170,4 +208,3 @@ document.addEventListener('DOMContentLoaded', () => {
   createList(name, label, description)
     .catch(console.error)
 })
-

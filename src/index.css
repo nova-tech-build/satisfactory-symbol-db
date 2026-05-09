@@ -11,3 +11,10 @@
 h1 {
     text-align: center;
 }
+
+.logo {
+    display: block;
+    margin: 0 auto 20px;
+    width: 100px;
+    height: auto;
+}
