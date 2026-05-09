@@ -45,7 +45,6 @@ export class ListGenerator {
     me.blockFilter = this.blockFilter
     me.blockSort = this.blockSort
     return me
-
   }
 
   run(): void {

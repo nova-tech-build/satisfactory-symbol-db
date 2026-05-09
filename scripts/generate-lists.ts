@@ -1,7 +1,7 @@
 import {ListGenerator} from './lib/list-generator.js'
 import {Block} from './lib/blocks.js'
 
-const inputDir: string = 'input-fonts'
+const inputDir: string = 'input/fonts'
 
 new ListGenerator(
   inputDir,
