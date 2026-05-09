@@ -23,8 +23,7 @@ export class ListGenerator {
   private blockSort: (a: Block, b: Block) => number = (a, b) => a.start - b.start;
 
   constructor(
-    private readonly inputDir: string,
-    private readonly outputPath: string,
+    private readonly inputDir: string
   ) {
   }
 
@@ -41,13 +40,13 @@ export class ListGenerator {
   }
 
   private clone(): ListGenerator {
-    const me =  new ListGenerator(this.inputDir, this.outputPath)
+    const me =  new ListGenerator(this.inputDir)
     me.blockFilter = this.blockFilter
     me.blockSort = this.blockSort
     return me
   }
 
-  run(): void {
+  generateBlocks(): Blocks {
     const points =
       this.getFontFiles()
       .map(file => Points.fromTtFile(file))
@@ -55,9 +54,13 @@ export class ListGenerator {
         (all, points) => all.merge(points),
         new Points([]),
       )
-    const blocks = Blocks.fromPoints(points.unique())
+    return Blocks.fromPoints(points.unique())
       .filter(this.blockFilter)
       .sort(this.blockSort)
+  }
+
+  output(outputPath: string): void {
+    const blocks = this.generateBlocks()
 
     const output: CharacterList = {
       generatedAt: new Date().toISOString(),
@@ -73,14 +76,14 @@ export class ListGenerator {
     }
 
     console.log(
-      `---\nWriting ${output.subsets.length} blocks to ${this.outputPath}\n---`
+      `---\nWriting ${output.subsets.length} blocks to ${outputPath}\n---`
     )
 
     blocks.forEach((block: Block) => {
       console.log(`${block.name} (${block.start} - ${block.end}) points: ${block.pointsAsNumbers.length}`)
     })
 
-    fs.writeFileSync(this.outputPath, JSON.stringify(output))
+    fs.writeFileSync(outputPath, JSON.stringify(output))
   }
 
   private getFontFiles(): string[] {

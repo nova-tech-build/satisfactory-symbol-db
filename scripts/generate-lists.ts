@@ -4,14 +4,12 @@ import {Block} from './lib/blocks.js'
 const inputDir: string = 'input/fonts'
 
 new ListGenerator(
-  inputDir,
-  'public/generated/all.json',
-).run()
+  inputDir
+).output('public/generated/all.json')
 
 
 new ListGenerator(
-  inputDir,
-  'public/generated/nova.json',
+  inputDir
 ).withBlockFilter((block: Block) => {
   const exclude: string[] = [
     'Alphabetic Presentation Forms',
@@ -97,6 +95,6 @@ new ListGenerator(
   const bi = explicit.indexOf(b.name)
 
   return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi) || a.start - b.start
-}).run()
+}).output('public/generated/nova.json')
 
 
