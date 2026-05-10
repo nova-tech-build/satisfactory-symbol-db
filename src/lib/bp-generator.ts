@@ -9,7 +9,7 @@ async function fetchTemplateBlueprint(): Promise<Blueprint> {
   if (!blueprintCache) {
     let response: Response
 
-    response = await fetch('bps/4m-label.sbp')
+    response = await fetch(`${import.meta.env.BASE_URL}/bps/4m-label.sbp`)
 
     if (!response.ok) {
       throw new Error(`Failed to fetch 4m-label.sbp: ${response.statusText}`)
