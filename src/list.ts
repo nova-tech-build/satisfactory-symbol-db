@@ -175,7 +175,7 @@ function createPageHeader(generated: string, label: string, description: string)
     <div class="page-header">
       <h1>Satisfactory Symbol DB: ${label}</h1>
       <p><em>${description}</em></p>
-      <p><a href="/">Back to all lists</a></p>
+      <p><a href="../">Back to all lists</a></p>
       <p>Click to copy.</p>
       <p>Large blocks are in outlined in pink.</p>
       <p class="generated-info">Generated: ${new Date(generated).toISOString()}</p>
@@ -185,7 +185,7 @@ function createPageHeader(generated: string, label: string, description: string)
 
 export async function createList(name: string, label: string, description: string): Promise<void> {
   const appContainer = document.getElementById('app')!
-  const data = await fetchData(`/generated/${name}.json`)
+  const data = await fetchData(`${import.meta.env.BASE_URL}/generated/${name}.json`)
 
   const template = html`
     ${createPageHeader(data.generatedAt, label, description)}
