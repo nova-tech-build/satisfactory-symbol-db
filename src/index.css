@@ -1,0 +1,20 @@
+
+#app {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: var(--color-bg-secondary);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px var(--color-shadow);
+    padding: 40px;
+}
+
+h1 {
+    text-align: center;
+}
+
+.logo {
+    display: block;
+    margin: 0 auto 20px;
+    width: 100px;
+    height: auto;
+}
