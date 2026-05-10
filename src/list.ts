@@ -1,3 +1,4 @@
+import './gate'
 import './common.css'
 import './list.css'
 import {html, render} from 'lit-html'

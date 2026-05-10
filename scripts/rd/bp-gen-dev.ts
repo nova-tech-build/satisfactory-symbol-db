@@ -15,8 +15,6 @@ function writeBlueprintFiles(path: string, blueprint: Blueprint): void {
       fileBodyChunks.push(chunk)
     })
 
-  console.log(summary);
-
   let p = `${path}.sbp`
   fs.writeFileSync(p, new Uint8Array(Buffer.concat([fileHeader, ...fileBodyChunks])))
   console.log(`Wrote ${p}`)
@@ -41,11 +39,7 @@ const points = blocks
   .map(block => block.pointsAsNumbers)
   .flatMap(x => x)
 
-console.log(points);
-
 const gen = new BpGenerator(tpl)
-
-
 
 const zip = new BpZip()
 let i = 0

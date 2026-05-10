@@ -16,12 +16,17 @@ async function fetchTemplateBlueprint(): Promise<Blueprint> {
     }
     const sbpBuffer = await response.arrayBuffer()
 
-    response = await fetch('bps/4m-label.sbpcfg')
+    response = await fetch(`${import.meta.env.BASE_URL}/bps/4m-label.sbpcfg`)
     if (!response.ok) {
       throw new Error(`Failed to fetch 4m-label.sbp: ${response.statusText}`)
     }
 
     const sbpcfgBuffer = await response.arrayBuffer()
+
+    console.log('Loaded blueprint files:', {
+      sbpSize: sbpBuffer.byteLength,
+      sbpcfgSize: sbpcfgBuffer.byteLength
+    })
 
     blueprintCache = Parser.ParseBlueprintFiles(
       '4m-label',
@@ -78,8 +83,6 @@ export class BpGenerator {
       const text =
           row1.map(p => String.fromCodePoint(p)).join('') + '\n' +
           row2.map(p => String.fromCodePoint(p)).join('');
-
-      console.log(bpIndex, signIndex, text)
 
       const sign = keySign
         .withShiftZ(this.SIGN_HEIGHT * z)
