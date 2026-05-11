@@ -23,11 +23,6 @@ async function fetchTemplateBlueprint(): Promise<Blueprint> {
 
     const sbpcfgBuffer = await response.arrayBuffer()
 
-    console.log('Loaded blueprint files:', {
-      sbpSize: sbpBuffer.byteLength,
-      sbpcfgSize: sbpcfgBuffer.byteLength
-    })
-
     blueprintCache = Parser.ParseBlueprintFiles(
       '4m-label',
       sbpBuffer,

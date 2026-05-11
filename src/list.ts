@@ -1,4 +1,3 @@
-import './gate'
 import './common.css'
 import './list.css'
 import {html, render} from 'lit-html'
@@ -22,6 +21,11 @@ function hexFormat(value: number): string {
 }
 
 function altCodeFormat(codePoint: number): string {
+  // Windows 11 Alt codes only work for BMP (U+0000 to U+FFFF)
+  if (codePoint > 0xFFFF) {
+    return '' // Don't show alt code for ranges outside BMP
+  }
+  // Windows 11 uses Alt + numeric keypad input with the decimal codepoint
   return `A+${codePoint.toString().padStart(4, '0')}`
 }
 
@@ -178,7 +182,7 @@ function createPageHeader(generated: string, label: string, description: string)
       <p><em>${description}</em></p>
       <p><a href="../">Back to all lists</a></p>
       <p>Click to copy.</p>
-      <p>Large blocks are in outlined in pink.</p>
+      <p>Large blocks are collapsed and outlined in pink.</p>
       <p class="generated-info">Generated: ${new Date(generated).toISOString()}</p>
     </div>
   `
@@ -200,7 +204,8 @@ export async function createList(name: string, label: string, description: strin
 const n = new URLSearchParams(location.search).get('name')
 
 const lists: Record<string, [string, string, string]> = {
-  nova: ['nova', 'Nova\'s Picks', 'Based on feels. Mostly for testing purposes.'],
+  'nova': ['nova', 'Nova\'s Picks', 'Based on feels. Mostly for testing purposes.'],
+  'ex-wiki': ['ex-wiki', 'Ex Wiki', 'Removed chars from the wiki'],
 }
 
 const [name, label, description] = lists[n ?? ''] ?? ['all', 'All Characters', 'All characters in the database.']
