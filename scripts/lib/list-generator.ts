@@ -97,7 +97,7 @@ export class ListGenerator {
       const chars = block.map((point: Point) => String.fromCodePoint(point.value)).join('')
       const truncated = chars.length > 255 ? ' (truncated)' : ''
       const truncChars = chars.substring(0, 255)
-      return `${block.name}${truncated} (${chars.length}): ${truncChars}`
+      return `${block.name}${truncated} (${chars.length})\n${truncChars}\n\n`
     })
 
     fs.writeFileSync(outputPath, output.join('\n'))
