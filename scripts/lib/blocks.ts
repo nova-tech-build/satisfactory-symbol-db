@@ -40,14 +40,26 @@ export class Block {
 
     this.points.push(point)
   }
+
+  public removePointAsNumber(p: number): void {
+    const i = this.points.findIndex((point: Point) => point.value === p)
+
+    if(i !== -1) {
+      this.points.splice(i, 1)
+    }
+  }
 }
 
 export class Blocks {
   constructor(private readonly blocks: Block[]) {
   }
 
-  public map<T>(callback: (b: Block) => T): T[] {
-    return this.blocks.map(callback)
+  public unwrap(): Block[] {
+    return this.blocks
+  }
+
+  public map(callback: (b: Block) => Block): Blocks {
+    return new Blocks(this.blocks.map(callback))
   }
 
   public filter(callback: (b: Block) => boolean): Blocks {

@@ -1,17 +1,16 @@
 import {ListGenerator} from './lib/list-generator.js'
-import {Block} from './lib/blocks.js'
 
 const inputDir: string = 'input/fonts'
 
 new ListGenerator(
-  inputDir
+  inputDir,
 ).output('public/generated/all.json')
 
 
 new ListGenerator(
-  inputDir
-).withBlockFilter((block: Block) => {
-  const exclude: string[] = [
+  inputDir,
+).withBlockFilter(
+  ListGenerator.createExplicitFilter([
     'Alphabetic Presentation Forms',
     'Arabic',
     'Arabic Presentation Forms-A',
@@ -53,10 +52,9 @@ new ListGenerator(
     'Latin Extended-B',
     'Latin Extended Additional',
     'Supplemental Punctuation',
-  ]
-  return !exclude.includes(block.name)
-}).withBlockSort((a: Block, b: Block) => {
-  const explicit: string[] = [
+  ])
+).withBlockSort(
+  ListGenerator.createExplicitSort([
     'Arrows',
     'Block Elements',
     'Box Drawing',
@@ -89,12 +87,7 @@ new ListGenerator(
     'Supplemental Arrows-B',
     'Superscripts and Subscripts',
     'Vertical Forms',
-  ]
-
-  const ai = explicit.indexOf(a.name)
-  const bi = explicit.indexOf(b.name)
-
-  return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi) || a.start - b.start
-}).output('public/generated/nova.json')
+  ]),
+).output('public/generated/nova.json')
 
 
