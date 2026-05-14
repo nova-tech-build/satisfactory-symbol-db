@@ -112,8 +112,8 @@ export class ListGenerator {
     }
   }
 
-  static createExplicitFilter(explicit: string[]): (block: Block) => boolean {
-    return (block: Block) => explicit.includes(block.name)
+  static createExplicitRemoveFilter(explicit: string[]): (block: Block) => boolean {
+    return (block: Block) => !explicit.includes(block.name)
   }
 
   private blockFilter: (block: Block) => boolean = () => true
