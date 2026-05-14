@@ -113,12 +113,6 @@ class CodePointManager {
     return codePointsSet
   }
 
-  getMissingCodePoints(wikiCodePoints: Set<number>): CodePointRecord[] {
-    return this.getAllCodePoints()
-      .filter(cp => !wikiCodePoints.has(cp))
-      .map(cp => this.createCodePointRecord(cp))
-  }
-
   groupCodePointsByBlock(records: CodePointRecord[]): Map<string, CodePointRecord[]> {
     const blockMap = new Map<string, CodePointRecord[]>()
 
@@ -146,19 +140,6 @@ class FileManager {
     }).join('\n')
   }
 
-  static formatMissingByBlock(records: CodePointRecord[], codePointManager: CodePointManager): string {
-    const blockMap = codePointManager.groupCodePointsByBlock(records)
-    const sortedBlocks = Array.from(blockMap.entries()).sort(
-      (a, b) => a[0].localeCompare(b[0])
-    )
-
-    return sortedBlocks.map(([block, chars]) => {
-      const charString = chars.map(r => r.char).join('')
-      const wrapped = charString.match(/.{1,120}/g)?.join('\n') || ''
-      return `${block}:\n${wrapped}`
-    }).join('\n\n')
-  }
-
   static formatAllByBlock(records: CodePointRecord[], codePointManager: CodePointManager): string {
     const blockMap = codePointManager.groupCodePointsByBlock(records)
     const sortedBlocks = Array.from(blockMap.entries()).sort(
@@ -175,7 +156,6 @@ class FileManager {
   writeCodePointsFiles(
     outDir: string,
     combinedRecords: CodePointRecord[],
-    missingCodePoints: CodePointRecord[],
     codePointManager: CodePointManager
   ): void {
     const combinedOutput: CombinedOutput = {
@@ -195,24 +175,6 @@ class FileManager {
       path.join(outDir, 'all-codepoints-by-block.txt'),
       FileManager.formatAllByBlock(combinedRecords, codePointManager)
     )
-
-    const missingOutput: CombinedOutput = {
-      totalCount: missingCodePoints.length,
-      codePoints: missingCodePoints
-    }
-
-    FileManager.writeFile(
-      path.join(outDir, 'missing-codepoints.json'),
-      JSON.stringify(missingOutput, null, 2)
-    )
-    FileManager.writeFile(
-      path.join(outDir, 'missing-codepoints.txt'),
-      FileManager.formatCodePoints(missingCodePoints)
-    )
-    FileManager.writeFile(
-      path.join(outDir, 'missing-codepoints-by-block.txt'),
-      FileManager.formatMissingByBlock(missingCodePoints, codePointManager)
-    )
   }
 }
 
@@ -227,25 +189,18 @@ class RdParse {
     this.fileManager = new FileManager()
   }
 
-   private logResults(
-    combinedRecords: CodePointRecord[],
-    wikiCodePointsSet: Set<number>,
-    missingCodePoints: CodePointRecord[],
-    outDir: string
-  ): void {
+  private logResults(combinedRecords: CodePointRecord[], outDir: string): void {
     console.log('\nResults:')
     console.log(`  Total unique code points: ${combinedRecords.length}`)
-    console.log(`  Code points in wiki.txt: ${wikiCodePointsSet.size}`)
-    console.log(`  Code points NOT in wiki.txt: ${missingCodePoints.length}`)
     console.log(`  Files saved to ${outDir}/`)
   }
 
   run(): void {
-    const inputFontDir = 'input-fonts'
+    const inputFontDir = 'input/fonts'
     const outDir = 'tmp'
 
     const files = fs.readdirSync(inputFontDir)
-      .filter(f => /\.(ttc|ufont)$/i.test(f))
+      .filter(f => /\.(ttc|ttf|ufont)$/i.test(f))
       .map(file => path.join(inputFontDir, file))
 
     console.log(`Found ${files.length} font file(s) in ${inputFontDir}`)
@@ -258,17 +213,11 @@ class RdParse {
     // Get all records
     const combinedRecords = this.codePointManager.getAllRecords()
 
-    // Read wiki code points and find missing ones
-    const wikiCodePointsSet = this.codePointManager.readCodePointsFromWiki(
-      path.join(inputFontDir, 'wiki.txt')
-    )
-    const missingCodePoints = this.codePointManager.getMissingCodePoints(wikiCodePointsSet)
-
     // Write output files
-    this.fileManager.writeCodePointsFiles(outDir, combinedRecords, missingCodePoints, this.codePointManager)
+    this.fileManager.writeCodePointsFiles(outDir, combinedRecords, this.codePointManager)
 
     // Log results
-    this.logResults(combinedRecords, wikiCodePointsSet, missingCodePoints, outDir)
+    this.logResults(combinedRecords, outDir)
   }
 }
 
