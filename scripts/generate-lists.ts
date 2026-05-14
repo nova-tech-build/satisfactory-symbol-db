@@ -10,7 +10,7 @@ new ListGenerator(
 new ListGenerator(
   inputDir,
 ).withBlockFilter(
-  ListGenerator.createExplicitFilter([
+  ListGenerator.createExplicitRemoveFilter([
     'Alphabetic Presentation Forms',
     'Arabic',
     'Arabic Presentation Forms-A',
@@ -34,6 +34,8 @@ new ListGenerator(
     'Combining Diacritical Marks for Symbols',
     'Cyrillic',
     'Cyrillic Supplement',
+    'Devanagari',
+    'Devanagari Extended',
     'Enclosed Ideographic Supplement',
     'Greek Extended',
     'Hangul Compatibility Jamo',
@@ -52,6 +54,7 @@ new ListGenerator(
     'Latin Extended-B',
     'Latin Extended Additional',
     'Supplemental Punctuation',
+    'Thai',
   ])
 ).withBlockSort(
   ListGenerator.createExplicitSort([
