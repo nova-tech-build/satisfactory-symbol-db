@@ -49,8 +49,7 @@ export class ListGenerator {
         .reduce(
           (all, points) => all.merge(points),
           new Points([]),
-        )
-
+        ).merge(Points.fromCompositeFontSubtypes('input/assets/DescriptionText.json'))
 
     return Blocks.fromPoints(points.unique())
       .map(this.blockMap)
