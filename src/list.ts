@@ -206,6 +206,7 @@ const n = new URLSearchParams(location.search).get('name')
 const lists: Record<string, [string, string, string]> = {
   'nova': ['nova', 'Nova\'s Picks', 'Based on feels. Mostly for testing purposes.'],
   'ex-wiki': ['ex-wiki', 'Ex Wiki', 'Removed chars from the wiki'],
+  'doug': ['doug', 'DOUG', 'DOUG DOUG DOUG'],
 }
 
 const [name, label, description] = lists[n ?? ''] ?? ['all', 'All Characters', 'All characters in the database.']
