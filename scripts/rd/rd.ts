@@ -200,7 +200,7 @@ class RdParse {
     const outDir = 'tmp'
 
     const files = fs.readdirSync(inputFontDir)
-      .filter(f => /\.(ttc|ttf|ufont)$/i.test(f))
+      .filter(f => /\.uasset$/i.test(f))
       .map(file => path.join(inputFontDir, file))
 
     console.log(`Found ${files.length} font file(s) in ${inputFontDir}`)

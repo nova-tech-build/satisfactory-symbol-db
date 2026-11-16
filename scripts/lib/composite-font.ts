@@ -24,12 +24,10 @@ type SubTypeface = {
   face: LoadedFace
 }
 
-const supportedFontExtensions = new Set(['.ufont', '.ttf', '.ttc', '.otf'])
-
 const openFont: FontLoader = fontPath => fontkit.openSync(fontPath) as unknown as OpenedFont
 
 function isFontCollection(font: OpenedFont): font is {fonts: readonly FontFace[]} {
-  return 'fonts' in font && Array.isArray(font.fonts)
+  return 'fonts' in font
 }
 
 function isUnicodeScalar(value: number): boolean {
@@ -96,12 +94,7 @@ export class CompositeFontResolver {
       return cached
     }
 
-    let opened: OpenedFont
-    try {
-      opened = this.fontLoader(fontPath)
-    } catch (error) {
-      throw new Error(`Unable to open font asset ${assetPath} at ${fontPath}: ${String(error)}`)
-    }
+    const opened = this.fontLoader(fontPath)
 
     const face = isFontCollection(opened)
       ? opened.fonts[subFaceIndex]
@@ -109,17 +102,10 @@ export class CompositeFontResolver {
     if (!face) {
       throw new Error(`Font asset ${assetPath} at ${fontPath} has no face at index ${subFaceIndex}`)
     }
-    if (!Array.isArray(face.characterSet) || typeof face.glyphForCodePoint !== 'function') {
-      throw new Error(`Font asset ${assetPath} at ${fontPath} has no readable cmap`)
-    }
-
     const glyphs = new Set<number>()
     for (const value of face.characterSet) {
-      if (!Number.isInteger(value)) {
-        continue
-      }
       const glyph = face.glyphForCodePoint(value)
-      if (glyph && Number.isInteger(glyph.id) && glyph.id !== 0) {
+      if (glyph && glyph.id !== 0) {
         glyphs.add(value)
       }
     }
@@ -134,9 +120,8 @@ export class CompositeFontResolver {
       throw new Error(`Invalid font asset path: ${assetPath}`)
     }
 
-    const matchingFiles = this.fontFiles.filter(file =>
-      path.basename(file, path.extname(file)).toLowerCase() === objectName.toLowerCase(),
-    )
+    const expectedFileName = `${objectName}.uasset`.toLowerCase()
+    const matchingFiles = this.fontFiles.filter(file => path.basename(file).toLowerCase() === expectedFileName)
     if (matchingFiles.length === 0) {
       throw new Error(`Font asset ${assetPath} was not found under ${this.fontDirectory}`)
     }
@@ -148,12 +133,8 @@ export class CompositeFontResolver {
   }
 
   private listFontFiles(directory: string): string[] {
-    if (!fs.existsSync(directory) || !fs.statSync(directory).isDirectory()) {
-      throw new Error(`Font directory does not exist: ${directory}`)
-    }
-
     return fs.readdirSync(directory, {withFileTypes: true})
-      .filter(entry => entry.isFile() && supportedFontExtensions.has(path.extname(entry.name).toLowerCase()))
+      .filter(entry => entry.isFile() && path.extname(entry.name).toLowerCase() === '.uasset')
       .map(entry => path.resolve(directory, entry.name))
   }
 }

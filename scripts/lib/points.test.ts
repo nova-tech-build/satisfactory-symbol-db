@@ -38,6 +38,7 @@ function fontFixture(
   files: Record<string, FakeOpenedFont>,
   subtypes: SubtypeFixture[] = [],
   subtypeFonts: TypefaceFontFixture[] = [],
+  fontLoader?: FontLoader,
 ) {
   const directory = fs.mkdtempSync(path.join(process.cwd(), 'tmp', 'composite-font-test-'))
   const defaultFonts = [
@@ -48,7 +49,7 @@ function fontFixture(
   const fallbackFonts = [{name: 'Regular', asset: 'fallback-regular'}]
 
   for (const asset of Object.keys(files)) {
-    fs.writeFileSync(path.join(directory, `${asset}.ufont`), 'test font')
+    fs.writeFileSync(path.join(directory, `${asset}.uasset`), 'test font')
   }
 
   const toFontDefinition = ({name, asset, subFaceIndex = 0}: TypefaceFontFixture) => ({
@@ -81,10 +82,10 @@ function fontFixture(
     },
   ]))
 
-  const loader: FontLoader = fontPath => {
+  const loader: FontLoader = fontLoader ?? (fontPath => {
     const asset = path.basename(fontPath, path.extname(fontPath))
     return files[asset]
-  }
+  })
 
   return {
     descriptionPath,
@@ -275,7 +276,7 @@ test('font lookup ignores files in nested directories', t => {
   t.after(nestedOnly.cleanup)
   const excludedDirectory = path.join(path.dirname(nestedOnly.descriptionPath), 'exclude')
   fs.mkdirSync(excludedDirectory)
-  fs.writeFileSync(path.join(excludedDirectory, 'nested-font.ufont'), 'test font')
+  fs.writeFileSync(path.join(excludedDirectory, 'nested-font.uasset'), 'test font')
   assert.throws(nestedOnly.resolver, /Font asset .* was not found/)
 
   const duplicate = fontFixture({
@@ -285,8 +286,49 @@ test('font lookup ignores files in nested directories', t => {
   t.after(duplicate.cleanup)
   const duplicateExcludeDirectory = path.join(path.dirname(duplicate.descriptionPath), 'exclude')
   fs.mkdirSync(duplicateExcludeDirectory)
-  fs.writeFileSync(path.join(duplicateExcludeDirectory, 'subtype.ufont'), 'duplicate font')
+  fs.writeFileSync(path.join(duplicateExcludeDirectory, 'subtype.uasset'), 'duplicate font')
   assert.ok(pointSet(duplicate.resolver().renderablePoints()).has(651))
+})
+
+test('font directory and loader errors are not wrapped', t => {
+  const missingDirectory = fontFixture(emptyFiles())
+  t.after(missingDirectory.cleanup)
+  assert.throws(
+    () => new CompositeFontResolver(
+      missingDirectory.descriptionPath,
+      path.join(path.dirname(missingDirectory.descriptionPath), 'missing'),
+    ),
+    error => error instanceof Error && 'code' in error && error.code === 'ENOENT',
+  )
+
+  const loaderError = new Error('font loader failed')
+  const failedLoader = fontFixture(emptyFiles(), [], [], () => {
+    throw loaderError
+  })
+  t.after(failedLoader.cleanup)
+  assert.throws(failedLoader.resolver, error => error === loaderError)
+})
+
+test('font lookup uses only uasset files', t => {
+  const missingUfont = fontFixture(emptyFiles(), [{
+    ranges: [[652, 652]],
+    fonts: regularSubtype('missing-ufont'),
+  }])
+  t.after(missingUfont.cleanup)
+  for (const extension of ['ufont', 'ttf', 'ttc', 'otf']) {
+    fs.writeFileSync(path.join(path.dirname(missingUfont.descriptionPath), `missing-ufont.${extension}`), 'not a font')
+  }
+  assert.throws(missingUfont.resolver, /Font asset .* was not found/)
+
+  const withAlternatives = fontFixture({
+    ...emptyFiles(),
+    subtype: fakeFont({653: 1}),
+  }, [{ranges: [[653, 653]], fonts: regularSubtype('subtype')}])
+  t.after(withAlternatives.cleanup)
+  for (const extension of ['ufont', 'ttf', 'ttc', 'otf']) {
+    fs.writeFileSync(path.join(path.dirname(withAlternatives.descriptionPath), `subtype.${extension}`), 'not a font')
+  }
+  assert.ok(pointSet(withAlternatives.resolver().renderablePoints()).has(653))
 })
 
 test('missing style definitions without a Regular face are rejected', t => {
