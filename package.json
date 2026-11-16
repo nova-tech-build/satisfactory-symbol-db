@@ -1,12 +1,13 @@
 {
     "name": "satisfactory-symbol-db",
     "private": true,
-    "version": "0.0.0",
+    "version": "0.0.2",
     "type": "module",
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "test": "node --import tsx --test scripts/lib/points.test.ts"
     },
     "devDependencies": {
         "@types/fontkit": "^2.0.9",
@@ -24,5 +25,8 @@
         "buffer": "^6.0.3",
         "jszip": "^3.10.1",
         "lit-html": "^3.3.2"
+    },
+    "allowScripts": {
+        "esbuild@0.27.2": true
     }
 }

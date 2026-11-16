@@ -6,8 +6,8 @@ export default defineConfig({
   build: {
     rolldownOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        list: resolve(__dirname, 'pages/list.html'),
+        main: resolve(import.meta.dirname, 'index.html'),
+        list: resolve(import.meta.dirname, 'pages/list.html'),
       },
       onwarn(warning, warn) {
         if (

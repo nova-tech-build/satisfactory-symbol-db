@@ -1,7 +1,12 @@
 import fs from 'node:fs'
-import path from 'node:path'
 import {Block, Blocks} from './blocks.js'
 import {Point, Points} from './points.js'
+
+const knownGoodPoints = new Points([
+  new Point(0x2044),
+  new Point(0x2120),
+  new Point(0xFEFF),
+])
 
 export type Subset = {
   name: string
@@ -43,15 +48,12 @@ export class ListGenerator {
   }
 
   generateBlocks(): Blocks {
-    const points =
-      this.getFontFiles()
-        .map(file => Points.fromTtFile(file))
-        .reduce(
-          (all, points) => all.merge(points),
-          new Points([]),
-        ).merge(Points.fromCompositeFontSubtypes('input/assets/DescriptionText.json'))
+    const points = Points.fromCompositeFont(
+      'input/assets/DescriptionText.json',
+      this.inputDir,
+    ).merge(knownGoodPoints).unique()
 
-    return Blocks.fromPoints(points.unique())
+    return Blocks.fromPoints(points)
       .map(this.blockMap)
       .filter(this.blockFilter)
       .sort(this.blockSort)
@@ -130,9 +132,4 @@ export class ListGenerator {
     return me
   }
 
-  private getFontFiles(): string[] {
-    return fs.readdirSync(this.inputDir)
-      .filter(file => /\.(ttc|ttf|ufont)$/i.test(file))
-      .map(file => path.join(this.inputDir, file))
-  }
 }
