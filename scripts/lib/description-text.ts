@@ -1,17 +1,16 @@
 import fs from 'node:fs'
 
 export type DescriptionFont = {
-  name: string
   assetPath: string
   subFaceIndex: number
 }
 
 type DescriptionText = {
-  defaultTypeface: DescriptionFont[]
-  fallbackTypeface: DescriptionFont[]
+  defaultTypeface: DescriptionFont
+  fallbackTypeface: DescriptionFont
   subtypes: {
     ranges: {lower: number, upper: number}[]
-    fonts: DescriptionFont[]
+    fonts: DescriptionFont
   }[]
 }
 
@@ -23,14 +22,16 @@ function asRecord(value: unknown, label: string): Record<string, any> {
   return value as Record<string, any>
 }
 
-function parseTypeface(value: unknown, label: string): DescriptionFont[] {
+function parseTypeface(value: unknown, label: string): DescriptionFont {
   const typeface = asRecord(value, label)
   if (!Array.isArray(typeface.Fonts) || typeface.Fonts.length === 0) {
     throw new Error(`${label}.Fonts must be a non-empty array`)
   }
 
   const names = new Set<string>()
-  const fonts = typeface.Fonts.map((fontValue: unknown, index: number) => {
+  let regularFont: Record<string, any> | undefined
+  let regularIndex = -1
+  typeface.Fonts.forEach((fontValue: unknown, index: number) => {
     const fontDefinition = asRecord(fontValue, `${label}.Fonts[${index}]`)
     if (typeof fontDefinition.Name !== 'string' || !fontDefinition.Name) {
       throw new Error(`${label}.Fonts[${index}].Name must be a non-empty string`)
@@ -39,28 +40,30 @@ function parseTypeface(value: unknown, label: string): DescriptionFont[] {
       throw new Error(`${label} contains duplicate font style ${fontDefinition.Name}`)
     }
     names.add(fontDefinition.Name)
-
-    const font = asRecord(fontDefinition.Font, `${label}.Fonts[${index}].Font`)
-    const localFont = asRecord(font.LocalFontFaceAsset, `${label}.Fonts[${index}].Font.LocalFontFaceAsset`)
-    if (typeof localFont.ObjectPath !== 'string' || !localFont.ObjectPath) {
-      throw new Error(`${label}.Fonts[${index}] is missing LocalFontFaceAsset.ObjectPath`)
-    }
-    if (!Number.isInteger(font.SubFaceIndex) || font.SubFaceIndex < 0) {
-      throw new Error(`${label}.Fonts[${index}].Font.SubFaceIndex must be a non-negative integer`)
-    }
-
-    return {
-      name: fontDefinition.Name,
-      assetPath: localFont.ObjectPath,
-      subFaceIndex: font.SubFaceIndex,
+    if (fontDefinition.Name === 'Regular') {
+      regularFont = fontDefinition
+      regularIndex = index
     }
   })
 
-  if (!names.has('Regular')) {
-    throw new Error(`${label} must define a Regular font for missing-style resolution`)
+  if (!regularFont) {
+    throw new Error(`${label} must define a Regular font`)
   }
 
-  return fonts
+  const regularLabel = `${label}.Fonts[${regularIndex}]`
+  const font = asRecord(regularFont.Font, `${regularLabel}.Font`)
+  const localFont = asRecord(font.LocalFontFaceAsset, `${regularLabel}.Font.LocalFontFaceAsset`)
+  if (typeof localFont.ObjectPath !== 'string' || !localFont.ObjectPath) {
+    throw new Error(`${regularLabel} is missing LocalFontFaceAsset.ObjectPath`)
+  }
+  if (!Number.isInteger(font.SubFaceIndex) || font.SubFaceIndex < 0) {
+    throw new Error(`${regularLabel}.Font.SubFaceIndex must be a non-negative integer`)
+  }
+
+  return {
+    assetPath: localFont.ObjectPath,
+    subFaceIndex: font.SubFaceIndex,
+  }
 }
 
 export function readDescriptionText(descriptionPath: string): DescriptionText {

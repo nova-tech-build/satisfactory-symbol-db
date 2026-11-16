@@ -1,18 +1,23 @@
 # INPUT FONTS
 
-The list generator resolves every font face referenced by `input/assets/DescriptionText.json` by asset name. It searches this directory recursively, including `exclude` and `known-working`; it does not merge unrelated font files or treat a character range as proof of glyph coverage.
+The list generator resolves only the Regular font face from each typeface in `input/assets/DescriptionText.json` by asset name. It searches only font files directly inside this directory; subdirectories such as `exclude` and `known-working` are ignored. Move each required font from `exclude` into this directory to use it. It does not merge unrelated font files or treat a character range as proof of glyph coverage. SemiBold and Bold assets are not needed for generation.
 
-Provide the game-extracted faces referenced by the composite font, including:
+Place these eight game-extracted Regular font files directly in this directory:
 
-* `OpenSans-Regular.ufont`, `OpenSans-SemiBold.ufont`, and `OpenSans-Bold.ufont` for the default typeface.
-* `NotoSansCJK-Regular.ufont` for the fallback typeface and its declared collection subfaces.
-* The Noto Sans, Noto Sans Display, Noto Sans Thai UI, Noto Kufi Arabic, Bengali, and Heebo faces referenced by the subtypefaces.
+* `OpenSans-Regular.ufont` — default typeface.
+* `NotoSansCJK-Regular.ufont` — fallback typeface and CJK subtypefaces, using their declared collection face indices.
+* `NotoSans-Regular.ufont` — Noto Sans subtypeface.
+* `NotoSansDisplay-Regular.ufont` — Noto Sans Display subtypeface.
+* `NotoSansThaiUI-Regular.ufont` — Thai UI subtypeface.
+* `NotoKufiArabic-Regular.ufont` — Noto Kufi Arabic subtypeface.
+* `NotoSansBengali-Regular.ufont` — Bengali subtypeface.
+* `Heebo-Regular.ufont` — Heebo subtypeface.
 
-The resolver uses each face's declared `SubFaceIndex`; for example, it does not union every face in the CJK collection. Missing or ambiguous assets and unavailable face indices are errors. Fonts may remain under `exclude` as long as their filenames match the referenced game assets.
+The resolver uses each face's declared `SubFaceIndex`; for example, it does not union every face in the CJK collection. Missing or ambiguous assets and unavailable face indices are errors. Only the required Regular assets need to be moved out of `exclude`; unused fonts can remain there.
 
-Use the actual `NotoSansThaiUI-Regular.ufont` referenced by `DescriptionText.json`; `NotoSansThai-Regular.ttf` is a substitute and is not used by generation. Heebo's SemiBold face is the game asset `Heebo-Medium.ufont`.
+Use the actual `NotoSansThaiUI-Regular.ufont` referenced by `DescriptionText.json`; `NotoSansThai-Regular.ttf` is a substitute and is not used by generation.
 
-Generation checks the actual cmap glyph ID in the selected face for Regular, SemiBold, and Bold. It ignores culture declarations and selects the first subtypeface in JSON order whose range contains the codepoint; if no range matches, it uses the default typeface. A missing subtype style uses that subtype's Regular face; a missing glyph may use the composite font's fallback face. U+FFFF and glyph-zero mappings are excluded. U+2044, U+2120, and U+FEFF are appended as known-good points based on in-game confirmation.
+Generation checks the actual cmap glyph ID in the selected Regular face. It ignores culture declarations and selects the first subtypeface in JSON order whose range contains the codepoint; if no range matches, it uses the default typeface. A missing glyph may use the composite font's fallback Regular face. U+FFFF and glyph-zero mappings are excluded. U+2044, U+2120, and U+FEFF are appended as known-good points based on in-game confirmation. SemiBold and Bold rendering is not checked.
 
 ## Direct testing
 

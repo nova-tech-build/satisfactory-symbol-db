@@ -3,10 +3,6 @@ import path from 'node:path'
 import * as fontkit from 'fontkit'
 import {DescriptionFont, readDescriptionText} from './description-text.js'
 
-const FONT_STYLES = ['Regular', 'SemiBold', 'Bold'] as const
-
-type FontStyle = typeof FONT_STYLES[number]
-
 type FontFace = {
   characterSet: readonly number[]
   glyphForCodePoint(codePoint: number): {id: number} | null
@@ -18,11 +14,6 @@ export type FontLoader = (fontPath: string) => OpenedFont
 
 type LoadedFace = ReadonlySet<number>
 
-type TypefaceFont = {
-  name: string
-  face: LoadedFace
-}
-
 type CharacterRange = {
   lower: number
   upper: number
@@ -30,7 +21,7 @@ type CharacterRange = {
 
 type SubTypeface = {
   ranges: CharacterRange[]
-  fonts: TypefaceFont[]
+  face: LoadedFace
 }
 
 const supportedFontExtensions = new Set(['.ufont', '.ttf', '.ttc', '.otf'])
@@ -49,8 +40,8 @@ function isUnicodeScalar(value: number): boolean {
 export class CompositeFontResolver {
   private readonly fontFiles: string[]
   private readonly faceCache = new Map<string, LoadedFace>()
-  private readonly defaultTypeface: TypefaceFont[]
-  private readonly fallbackTypeface: TypefaceFont[]
+  private readonly defaultTypeface: LoadedFace
+  private readonly fallbackTypeface: LoadedFace
   private readonly subtypes: SubTypeface[]
 
   constructor(
@@ -65,7 +56,7 @@ export class CompositeFontResolver {
     this.fallbackTypeface = this.parseTypeface(description.fallbackTypeface)
     this.subtypes = description.subtypes.map(subtype => ({
       ranges: subtype.ranges,
-      fonts: this.parseTypeface(subtype.fonts),
+      face: this.parseTypeface(subtype.fonts),
     }))
   }
 
@@ -84,19 +75,8 @@ export class CompositeFontResolver {
       const subtype = this.subtypes.find(candidate =>
         candidate.ranges.some(range => value >= range.lower && value <= range.upper),
       )
-      const primaryTypeface = subtype?.fonts ?? this.defaultTypeface
-      let renderable = true
-
-      for (const style of FONT_STYLES) {
-        const primary = this.getFontForStyle(primaryTypeface, style)
-        const fallback = this.getFontForStyle(this.fallbackTypeface, style)
-        if (!primary.face.has(value) && !fallback.face.has(value)) {
-          renderable = false
-          break
-        }
-      }
-
-      if (renderable) {
+      const primaryFace = subtype?.face ?? this.defaultTypeface
+      if (primaryFace.has(value) || this.fallbackTypeface.has(value)) {
         points.push(value)
       }
     }
@@ -104,20 +84,8 @@ export class CompositeFontResolver {
     return points
   }
 
-  private parseTypeface(fonts: DescriptionFont[]): TypefaceFont[] {
-    return fonts.map(font => ({
-      name: font.name,
-      face: this.loadFace(font.assetPath, font.subFaceIndex),
-    }))
-  }
-
-  private getFontForStyle(typeface: TypefaceFont[], style: FontStyle): TypefaceFont {
-    const font = typeface.find(candidate => candidate.name === style) ??
-      typeface.find(candidate => candidate.name === 'Regular')
-    if (!font) {
-      throw new Error(`Typeface has no font for ${style} and no Regular font`)
-    }
-    return font
+  private parseTypeface(font: DescriptionFont): LoadedFace {
+    return this.loadFace(font.assetPath, font.subFaceIndex)
   }
 
   private loadFace(assetPath: string, subFaceIndex: number): LoadedFace {
@@ -184,18 +152,8 @@ export class CompositeFontResolver {
       throw new Error(`Font directory does not exist: ${directory}`)
     }
 
-    const files: string[] = []
-    const visit = (currentDirectory: string): void => {
-      for (const entry of fs.readdirSync(currentDirectory, {withFileTypes: true})) {
-        const entryPath = path.resolve(currentDirectory, entry.name)
-        if (entry.isDirectory()) {
-          visit(entryPath)
-        } else if (entry.isFile() && supportedFontExtensions.has(path.extname(entry.name).toLowerCase())) {
-          files.push(entryPath)
-        }
-      }
-    }
-    visit(path.resolve(directory))
-    return files
+    return fs.readdirSync(directory, {withFileTypes: true})
+      .filter(entry => entry.isFile() && supportedFontExtensions.has(path.extname(entry.name).toLowerCase()))
+      .map(entry => path.resolve(directory, entry.name))
   }
 }

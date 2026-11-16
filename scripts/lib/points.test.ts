@@ -42,8 +42,8 @@ function fontFixture(
   const directory = fs.mkdtempSync(path.join(process.cwd(), 'tmp', 'composite-font-test-'))
   const defaultFonts = [
     {name: 'Regular', asset: 'default-regular'},
-    {name: 'SemiBold', asset: 'default-semibold'},
-    {name: 'Bold', asset: 'default-bold'},
+    {name: 'SemiBold', asset: 'missing-default-semibold'},
+    {name: 'Bold', asset: 'missing-default-bold'},
   ]
   const fallbackFonts = [{name: 'Regular', asset: 'fallback-regular'}]
 
@@ -95,8 +95,6 @@ function fontFixture(
 
 const emptyFiles = () => ({
   'default-regular': fakeFont({}),
-  'default-semibold': fakeFont({}),
-  'default-bold': fakeFont({}),
   'fallback-regular': fakeFont({}),
 })
 
@@ -116,16 +114,18 @@ test('description wrapper exposes validated font definitions and ranges', t => {
   t.after(fixture.cleanup)
 
   const description = readDescriptionText(fixture.descriptionPath)
-  assert.deepEqual(description.fallbackTypeface, [{
-    name: 'Regular',
+  assert.deepEqual(description.fallbackTypeface, {
     assetPath: '/Game/Font/fallback-regular.0',
     subFaceIndex: 0,
-  }])
+  })
   assert.deepEqual(description.subtypes, [{
     ranges: [{lower: 100, upper: 102}],
-    fonts: [{name: 'Regular', assetPath: '/Game/Font/collection.0', subFaceIndex: 1}],
+    fonts: {assetPath: '/Game/Font/collection.0', subFaceIndex: 1},
   }])
-  assert.deepEqual(description.defaultTypeface.map(font => font.name), ['Regular', 'SemiBold', 'Bold'])
+  assert.deepEqual(description.defaultTypeface, {
+    assetPath: '/Game/Font/default-regular.0',
+    subFaceIndex: 0,
+  })
 })
 
 test('description wrapper rejects malformed fallback definitions and unsupported bounds', t => {
@@ -197,17 +197,23 @@ test('subtypeface selection uses ranges regardless of declared culture', t => {
   assert.ok(pointSet(fixture.resolver().renderablePoints()).has(200))
 })
 
-test('missing SemiBold and Bold subtype styles use the subtype Regular face', t => {
+test('only Regular faces are loaded and checked', t => {
   const fixture = fontFixture({
     ...emptyFiles(),
     subtype: fakeFont({300: 1}),
-  }, [{ranges: [[300, 300]], fonts: regularSubtype('subtype')}])
+  }, [{ranges: [[300, 301]], fonts: [
+    ...regularSubtype('subtype'),
+    {name: 'SemiBold', asset: 'missing-subtype-semibold'},
+    {name: 'Bold', asset: 'missing-subtype-bold'},
+  ]}])
   t.after(fixture.cleanup)
 
-  assert.ok(pointSet(fixture.resolver().renderablePoints()).has(300))
+  const values = pointSet(fixture.resolver().renderablePoints())
+  assert.ok(values.has(300))
+  assert.ok(!values.has(301))
 })
 
-test('fallback supplies glyphs missing from individual primary styles', t => {
+test('fallback supplies glyphs missing from the primary Regular face', t => {
   const files = {
     ...emptyFiles(),
     'default-regular': fakeFont({400: 1}),
@@ -237,8 +243,6 @@ test('collection coverage comes only from the declared subface index', t => {
 test('glyph-zero mappings and the U+FFFF sentinel are excluded', t => {
   const fixture = fontFixture({
     'default-regular': fakeFont({500: 0, 0xFFFF: 1}),
-    'default-semibold': fakeFont({500: 0, 0xFFFF: 1}),
-    'default-bold': fakeFont({500: 0, 0xFFFF: 1}),
     'fallback-regular': fakeFont({}),
   })
   t.after(fixture.cleanup)
@@ -262,6 +266,27 @@ test('missing assets and unavailable collection faces fail with actionable error
   }, [{ranges: [[601, 601]], fonts: regularSubtype('collection', 3)}])
   t.after(missingFace.cleanup)
   assert.throws(missingFace.resolver, /has no face at index 3/)
+})
+
+test('font lookup ignores files in nested directories', t => {
+  const nestedOnly = fontFixture({
+    ...emptyFiles(),
+  }, [{ranges: [[650, 650]], fonts: regularSubtype('nested-font')}])
+  t.after(nestedOnly.cleanup)
+  const excludedDirectory = path.join(path.dirname(nestedOnly.descriptionPath), 'exclude')
+  fs.mkdirSync(excludedDirectory)
+  fs.writeFileSync(path.join(excludedDirectory, 'nested-font.ufont'), 'test font')
+  assert.throws(nestedOnly.resolver, /Font asset .* was not found/)
+
+  const duplicate = fontFixture({
+    ...emptyFiles(),
+    subtype: fakeFont({651: 1}),
+  }, [{ranges: [[651, 651]], fonts: regularSubtype('subtype')}])
+  t.after(duplicate.cleanup)
+  const duplicateExcludeDirectory = path.join(path.dirname(duplicate.descriptionPath), 'exclude')
+  fs.mkdirSync(duplicateExcludeDirectory)
+  fs.writeFileSync(path.join(duplicateExcludeDirectory, 'subtype.ufont'), 'duplicate font')
+  assert.ok(pointSet(duplicate.resolver().renderablePoints()).has(651))
 })
 
 test('missing style definitions without a Regular face are rejected', t => {
