@@ -1,18 +1,18 @@
 # INPUT FONTS
 
-Extract the following ufonts:
+The list generator resolves every font face referenced by `input/assets/DescriptionText.json` by asset name. It searches this directory recursively, including `exclude` and `known-working`; it does not merge unrelated font files or treat a character range as proof of glyph coverage.
 
-* Default: OpenSans-Regular.ufont
-* Fallback: NotoSansCJK-Regular.ufont
+Provide the game-extracted faces referenced by the composite font, including:
 
-Large coverage from DescriptionText.json composite font:
+* `OpenSans-Regular.ufont`, `OpenSans-SemiBold.ufont`, and `OpenSans-Bold.ufont` for the default typeface.
+* `NotoSansCJK-Regular.ufont` for the fallback typeface and its declared collection subfaces.
+* The Noto Sans, Noto Sans Display, Noto Sans Thai UI, Noto Kufi Arabic, Bengali, and Heebo faces referenced by the subtypefaces.
 
-* NotoKufiArabic-Regular.ufont
-* NotoSansThai-Regular.ttf (DescriptionTest.json says Noto Sans Thai UI Regular but that has lots of broken glyphs YMMV)
+The resolver uses each face's declared `SubFaceIndex`; for example, it does not union every face in the CJK collection. Missing or ambiguous assets and unavailable face indices are errors. Fonts may remain under `exclude` as long as their filenames match the referenced game assets.
 
-These have points added manually from DescriptionText.json:
+Use the actual `NotoSansThaiUI-Regular.ufont` referenced by `DescriptionText.json`; `NotoSansThai-Regular.ttf` is a substitute and is not used by generation. Heebo's SemiBold face is the game asset `Heebo-Medium.ufont`.
 
-* NotoSansDisplay-Regular.ufont
+Generation checks the actual cmap glyph ID in the selected face for Regular, SemiBold, and Bold. It ignores culture declarations and selects the first subtypeface in JSON order whose range contains the codepoint; if no range matches, it uses the default typeface. A missing subtype style uses that subtype's Regular face; a missing glyph may use the composite font's fallback face. U+FFFF and glyph-zero mappings are excluded. U+2044, U+2120, and U+FEFF are appended as known-good points based on in-game confirmation.
 
 ## Direct testing
 
